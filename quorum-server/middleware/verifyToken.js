@@ -1,5 +1,5 @@
 const { auth } = require("../config/firebase");
-const User = require("../models/User");
+const prisma = require('../config/prisma');
 
 
 const verifyToken = async(req, res, next)=>{
@@ -17,7 +17,7 @@ try {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 
-  const user = await User.findOne({ uid: decoded.uid });
+  const user = await prisma.user.findUnique({ where: { uid: decoded.uid }, select: { id: true, email: true, name: true } });
 
   if (!user) {
     return res.status(401).json({ message: 'No account exists for this token' });

@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id          String   @id @default(cuid())
+  uid         String   @unique
+  email       String   @unique
+  displayName String?  @db.VarChar(60)
+  photoURL    String?
+  role        Role     @default(USER)
+  reputation  Int      @default(0)
+  bio         String   @default("") @db.VarChar(300)
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions Question[]
+  answers   Answer[]
+  comments  Comment[]
+  votes     Vote[]
+}
+
+model Question {
+  id             String   @id @default(cuid())
+  title          String   @db.VarChar(150)
+  slug           String   @unique
+  body           String
+  authorId       String
+  score          Int      @default(0)
+  answerCount    Int      @default(0)
+  viewCount      Int      @default(0)
+  lastActivityAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  author           User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  answers          Answer[]      @relation("QuestionAnswers")
+  tags             QuestionTag[]
+  votes            Vote[]
+  comments         Comment[]
+  acceptedAnswerId String?       @unique
+  acceptedAnswer   Answer?       @relation("AcceptedAnswer", fields: [acceptedAnswerId], references: [id])
+
+  @@index([authorId, createdAt(sort: Desc)])
+  @@index([lastActivityAt(sort: Desc)])
+}
+
+model Answer {
+  id        String   @id @default(cuid())
+  body      String
+  questionId String
+  authorId  String
+  score     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  question   Question  @relation("QuestionAnswers", fields: [questionId], references: [id], onDelete: Cascade)
+  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  acceptedBy Question? @relation("AcceptedAnswer")
+  votes      Vote[]
+  comments   Comment[]
+
+  @@index([questionId, score(sort: Desc)])
+}
+
+model Tag {
+  id            String   @id @default(cuid())
+  name          String   @unique @db.VarChar(30)
+  slug          String   @unique
+  description   String   @default("") @db.VarChar(500)
+  questionCount Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  questions QuestionTag[]
+}
+
+model QuestionTag {
+  questionId String
+  tagId      String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+  @@index([tagId])
+}
+
+model Vote {
+  id         String   @id @default(cuid())
+  userId     String
+  value      Int
+  questionId String?
+  answerId   String?
+  createdAt  DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer   Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@unique([userId, answerId])
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  body       String   @db.VarChar(600)
+  authorId   String
+  questionId String?
+  answerId   String?
+  createdAt  DateTime @default(now())
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer   Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@index([questionId, createdAt])
+  @@index([answerId, createdAt])
+}
