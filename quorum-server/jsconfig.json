@@ -1,11 +1,29 @@
 {
   "compilerOptions": {
     "checkJs": true,
-    "module": "nodenext",
+    "allowJs": true,
+    "noEmit": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
     "target": "es2022",
-    "noImplicitAny": false
-
+    "lib": [
+      "es2022"
+    ],
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "types": [
+      "node"
+    ],
+    "maxNodeModuleJsDepth": 0
   },
-  "include": ["**/*.js"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "generated",
+    "prisma"
+  ]
 }

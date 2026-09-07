@@ -17,7 +17,7 @@ try {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 
-  const user = await prisma.user.findUnique({ where: { uid: decoded.uid }, select: { id: true, email: true, name: true } });
+  const user = await prisma.user.findUnique({ where: { uid: decoded.uid } });
 
   if (!user) {
     return res.status(401).json({ message: 'No account exists for this token' });
