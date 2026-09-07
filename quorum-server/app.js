@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const errorHandler = require('./middleware/errorHandler');
 const userRoutes = require('./routes/userRoutes');
+const questionRoutes = require('./routes/questionRoutes');
 
 const app = express();
 
@@ -12,9 +13,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-// routes get mounted here in the next step
-app.use('/api/users', userRoutes);
 
+app.use('/api/users', userRoutes);
+app.use('/api/questions', questionRoutes);
 
 
 app.use((req, res) => {

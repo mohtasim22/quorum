@@ -1,17 +1,19 @@
-const verifyOwner = (Model, param = 'id') => async (req, res, next) => {
-  const doc = await Model.findById(req.params[param]);
+const verifyOwner = (delegate, param = 'id') => async (req, res, next) => {
+  const record = await delegate.findUnique({ where: { id: req.params[param] } });
 
-  if (!doc) return res.status(404).json({ message: 'Not found' });
+  if (!record) return res.status(404).json({ message: 'Not found' });
 
-  const isOwner = doc.author?.equals(req.user._id);
-  const isAdmin = req.user.role === 'admin';
+  const isOwner = record.authorId === req.user.id;
+  const isAdmin = req.user.role === 'ADMIN';
 
   if (!isOwner && !isAdmin) {
     return res.status(403).json({ message: 'You can only modify your own posts' });
   }
 
-  req.doc = doc;
+  req.record = record;
   next();
 };
 
 module.exports = verifyOwner;
+
+
