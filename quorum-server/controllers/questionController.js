@@ -2,6 +2,9 @@ const prisma = require('../config/prisma');
 const uniqueSlug = require('../utils/uniqueSlug');
 const normalizeTags = require('../utils/normalizeTags');
 
+// Neon is serverless: a cold pool can take seconds to hand out a transaction.
+const TX_OPTS = { maxWait: 15000, timeout: 20000 };
+
 const questionInclude = {
   author: {
     select: { id: true, displayName: true, photoURL: true, slug: true, reputation: true },
@@ -50,7 +53,7 @@ const createQuestion = async (req, res) => {
     });
 
     return created;
-  });
+  }, TX_OPTS);
 
   res.status(201).json(shape(question));
 };
@@ -70,7 +73,10 @@ const listQuestions = async (req, res) => {
       ? [{ score: 'desc' }, { createdAt: 'desc' }]
       : [{ createdAt: 'desc' }];
 
-  const [items, total] = await prisma.$transaction([
+  // Two independent reads: Promise.all, not $transaction. A paginated count is
+  // allowed to be a moment stale, and a read-only transaction on a serverless
+  // pool costs a transaction slot for no benefit.
+  const [items, total] = await Promise.all([
     prisma.question.findMany({
       where,
       orderBy,
@@ -161,7 +167,7 @@ const updateQuestion = async (req, res) => {
       },
       include: questionInclude,
     });
-  });
+  }, TX_OPTS);
 
   res.json(shape(updated));
 };
@@ -186,7 +192,7 @@ const deleteQuestion = async (req, res) => {
     }
 
     await tx.question.delete({ where: { id: question.id } });
-  });
+  }, TX_OPTS);
 
   res.json({ message: 'Question deleted' });
 };

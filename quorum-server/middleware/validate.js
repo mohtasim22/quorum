@@ -11,7 +11,15 @@ const validate = (schema, source = 'body') => (req, res, next) => {
     });
   }
 
-  req[source] = result.data;   // parsed, coerced, and stripped
+  // Express 5 defines req.query as a getter-only accessor on the prototype, so
+  // `req.query = ...` silently no-ops. Define an own property to shadow it.
+  Object.defineProperty(req, source, {
+    value: result.data,          // parsed, coerced, and stripped
+    writable: true,
+    configurable: true,
+    enumerable: true,
+  });
+
   next();
 };
 
